@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Medical Expert System</title>
+    <style>
+        body {
+            background-image: url("./pexels-pixabay-247786.jpg");
+            background-color: #e9e9e9;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            animation: fadeIn 1s ease-in-out;
+        }
+        #container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            animation: slideIn 1s ease-in-out;
+        }
+        h1 {
+            text-align: center;
+            color: #555;
+        }
+        p{
+          display: block;
+          font-weight: bold;
+          font-size: 24px;
+          color: brown;
+        }
+        label {
+            display: block;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="email"],
+        select{
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+        }
+        textarea {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+        }
+        button {
+            background-color: #555;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        button:hover {
+            background-color: #444;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); }
+            to { transform: translateY(0); }
+        }
+        .loader {
+  display: none;
+  margin: auto;
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #3498db;
+  width: 60px;
+  height: 60px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+}
+
+/* Safari */
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+    </style>
+    <script>
+        function call_function(){
+        document.getElementById("submit").value =="1"?get_symptoms():get_disease();
+        
+      }
+
+      function get_symptoms() {
+    
+       // document.getElementsByClassName("loader")[0].style.display = "block";
+       document.getElementById("relevant_disease").innerHTML = '';
+
+       
+       var data = document.getElementById("symptoms").value;
+      //  console.log(data)
+       var payload = data.split(',');
+      
+       const json = JSON.stringify(payload);
+
+       const xhr = new XMLHttpRequest();
+
+       xhr.open("POST", "http://localhost:5000/recommendation");
+
+       xhr.setRequestHeader("Content-Type", "application/json");
+
+       xhr.send(json);
+       xhr.onreadystatechange = processRequest;
+       function processRequest(e) {
+         if (xhr.readyState == 4 && xhr.status == 200) {
+          
+           const response =JSON.parse(xhr.responseText);
+           console.log("response: ",response['x'])
+           // console.log("response: ", response.length);
+           for(var i=0;i<response['x'].length;i++){
+               let option = document.createElement("option");
+               option.setAttribute('value', response['x'][i]);
+
+               let optionText = document.createTextNode(response['x'][i]);
+               option.appendChild(optionText);
+              
+               document.getElementById("symptomsDropDown").appendChild(option);
+               document.getElementById("symptomsDropDown").removeAttribute('hidden');
+              
+           }
+           // document.getElementsByClassName("loader")[0].style.display = "none";
+           document.getElementsByTagName("label")[0].style.display = "none";
+           document.getElementsByTagName("textarea")[0].style.display = "none";
+           
+             
+             document.getElementById("symptoms").value = "";
+             document.getElementById("submit").value = "0";
+          
+          
+         }
+        
+       }
+     }
+
+     function get_disease() {
+      
+        document.getElementById("relevant_disease").innerHTML = '';
+        document.getElementsByTagName("label")[0].style.display = "block";
+        document.getElementsByTagName("textarea")[0].style.display = "block";
+        
+       
+       
+        document.getElementsByClassName("loader")[0].style.display = "block";
+
+        var selected = [];
+    for (var option of document.getElementById("symptomsDropDown").options)
+    {
+        if (option.selected) {
+            selected.push(option.value);
+        }
+    }
+    
+        const json = JSON.stringify(selected);
+
+        const xhr = new XMLHttpRequest();
+
+        xhr.open("POST", "http://localhost:5000/prediction");
+
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.send(json);
+        xhr.onreadystatechange = processRequest;
+        function processRequest(e) {
+          if (xhr.readyState == 4 && xhr.status == 200) {
+           
+            const response = xhr.responseText;
+           
+            document.getElementsByClassName("loader")[0].style.display = "none";
+            
+              document.getElementById("relevant_disease").innerHTML += ` <p>
+                   ${response}
+                </p>`;
+              
+            resetForm();
+           
+            
+          }
+         
+        }
+      }
+      function resetForm() {
+       
+       document.getElementById("symptomsDropDown").innerHTML = '';
+       document.getElementById("submit").value = "1";
+       document.getElementById("symptomsDropDown").setAttribute('hidden','hidden');
+       
+       
+      
+     }
+
+    </script>
+</head>
+<body>
+    <div id="container">
+        <h1>Medical Expert System</h1>
+        <div class="loader"></div>
+        <div id="relevant_disease">
+            <p>your result will appear here</p> 
+        </div>
+        
+            <label for="symptoms">Enter your symptoms:</label>
+            <textarea id="symptoms" name="symptoms" placeholder="Please enter your symptoms"></textarea>
+            <select id="symptomsDropDown" class="symptomsDropDown" hidden multiple>
+            </select>
+            <button type="button" id="submit" value="1" onclick="call_function()">Submit</button>
+        
+    </div>
+</body>
+</html>
